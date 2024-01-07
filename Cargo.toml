@@ -1,0 +1,7 @@
+[workspace]
+
+members=[
+  "chess",
+  "chess_engine",
+  "app"
+]
