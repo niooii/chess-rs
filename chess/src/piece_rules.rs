@@ -7,7 +7,7 @@ pub enum Direction {
     LeftUp,
     LeftDown,
     RightUp,
-    RightDown
+    RightDownsy
 }
 
 pub struct MoveVec {
