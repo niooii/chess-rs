@@ -1,7 +1,5 @@
 mod board;
 mod tile;
 mod piece;
-
-pub enum Piece {
-    
-}
+mod piece_rules;
+mod game;

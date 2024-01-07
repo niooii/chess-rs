@@ -1,7 +1,7 @@
 use std::sync::Mutex;
 use std::sync::Arc;
 
-use crate::Piece;
+use crate::piece::Piece;
 
 pub struct Tile {
      piece: Option<Arc<Mutex<Piece>>>

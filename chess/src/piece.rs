@@ -1,14 +1,22 @@
+use crate::{piece_rules::MoveRules}
+
 // hardcode for now
 pub struct Piece {
-    rules: PieceRules
+    move_rules: Vec<MoveRules>
 }
 
-pub enum DefaultPieces {
-    Pawn,
-    Knight,
-    Bishop,
-    Rook,
-    Queen,
-    King,
-    None
+impl Piece {
+    pub fn new() -> Self {
+        Self {
+            
+        }
+    }
+}
+
+pub mod defaults {
+    use crate::piece::Piece;
+
+    pub fn pawn() -> Piece {
+        Piece::new()
+    }
 }

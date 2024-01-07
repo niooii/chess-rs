@@ -7,7 +7,7 @@ pub enum Direction {
     LeftUp,
     LeftDown,
     RightUp,
-    RightDownsy
+    RightDown
 }
 
 pub struct MoveVec {
@@ -38,7 +38,15 @@ pub enum MoveRules {
 }
 
 impl MoveRules {
-    pub fn Jump(applied_once: bool, moves: Vec<MoveVec>) -> Jump {
+    pub fn jump(applied_once: bool, moves: Vec<MoveVec>) -> MoveRules {
+        MoveRules::Jump { applied_once, move_info: moves }
+    }
 
+    pub fn pierce(moves: Vec<MoveVec>) -> MoveRules {
+        MoveRules::Pierce { move_info: moves }
+    }
+    
+    pub fn blunt(moves: Vec<MoveVec>) -> MoveRules {
+        MoveRules::Blunt { move_info: moves }
     }
 }
