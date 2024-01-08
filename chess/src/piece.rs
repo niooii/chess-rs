@@ -291,6 +291,7 @@ pub mod defaults {
             .move_rules(move_rules)
             .kill_rules(kill_rules)
             .nth_move_rules(nth_move_rules)
+            .use_moves_for_kills(true)
             .build()
     }
 
@@ -309,6 +310,7 @@ pub mod defaults {
             .move_rules(move_rules)
             .kill_rules(kill_rules)
             .nth_move_rules(nth_move_rules)
+            .use_moves_for_kills(true)
             .build()
     }
 }
