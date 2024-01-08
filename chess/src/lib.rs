@@ -1,5 +1,6 @@
-mod board;
-mod tile;
-mod piece;
-mod piece_rules;
-mod game;
+pub mod board;
+pub mod tile;
+pub mod piece;
+pub mod piece_rules;
+pub mod game;
+pub mod r#move;
