@@ -62,6 +62,14 @@ impl PieceRef {
     pub fn can_use_moves_for_kills(&self) -> bool {
         self.use_moves_for_kills
     }
+
+    pub fn kill(&mut self) {
+        self.alive = false;
+    } 
+
+    pub fn revive(&mut self) {
+        self.alive = true;
+    } 
 }
 
 #[derive(Default)]
@@ -198,10 +206,10 @@ pub mod defaults {
         let move_rules = vec![
             MoveRules::blunt(
                 vec![
-                    MoveVec::new(Distance::Infinite, Direction::Up),
-                    MoveVec::new(Distance::Infinite, Direction::Down),
-                    MoveVec::new(Distance::Infinite, Direction::Left),
-                    MoveVec::new(Distance::Infinite, Direction::Right)
+                    MoveVec::new(Distance::infinite(), Direction::Up),
+                    MoveVec::new(Distance::infinite(), Direction::Down),
+                    MoveVec::new(Distance::infinite(), Direction::Left),
+                    MoveVec::new(Distance::infinite(), Direction::Right)
                 ]
             )
         ];
@@ -224,10 +232,10 @@ pub mod defaults {
         let move_rules = vec![
             MoveRules::blunt(
                 vec![
-                    MoveVec::new(Distance::Infinite, Direction::LeftUp),
-                    MoveVec::new(Distance::Infinite, Direction::LeftDown),
-                    MoveVec::new(Distance::Infinite, Direction::RightUp),
-                    MoveVec::new(Distance::Infinite, Direction::RightDown)
+                    MoveVec::new(Distance::infinite(), Direction::LeftUp),
+                    MoveVec::new(Distance::infinite(), Direction::LeftDown),
+                    MoveVec::new(Distance::infinite(), Direction::RightUp),
+                    MoveVec::new(Distance::infinite(), Direction::RightDown)
                 ]
             )
         ];
@@ -269,14 +277,14 @@ pub mod defaults {
         let move_rules = vec![
             MoveRules::blunt(
                 vec![
-                    MoveVec::new(Distance::Infinite, Direction::Up),
-                    MoveVec::new(Distance::Infinite, Direction::Down),
-                    MoveVec::new(Distance::Infinite, Direction::Left),
-                    MoveVec::new(Distance::Infinite, Direction::Right),
-                    MoveVec::new(Distance::Infinite, Direction::LeftUp),
-                    MoveVec::new(Distance::Infinite, Direction::LeftDown),
-                    MoveVec::new(Distance::Infinite, Direction::RightUp),
-                    MoveVec::new(Distance::Infinite, Direction::RightDown)
+                    MoveVec::new(Distance::infinite(), Direction::Up),
+                    MoveVec::new(Distance::infinite(), Direction::Down),
+                    MoveVec::new(Distance::infinite(), Direction::Left),
+                    MoveVec::new(Distance::infinite(), Direction::Right),
+                    MoveVec::new(Distance::infinite(), Direction::LeftUp),
+                    MoveVec::new(Distance::infinite(), Direction::LeftDown),
+                    MoveVec::new(Distance::infinite(), Direction::RightUp),
+                    MoveVec::new(Distance::infinite(), Direction::RightDown)
                 ]
             )
         ];

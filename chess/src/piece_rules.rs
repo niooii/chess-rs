@@ -27,7 +27,7 @@ impl Distance {
         }
     }
 
-    pub fn infinite(distance: u32) -> Distance {
+    pub fn infinite() -> Distance {
         Distance::Infinite
     }
 }

@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 chess_engine = {path="../chess_engine"}
+thiserror = "1.0.56"

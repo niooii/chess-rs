@@ -1,7 +1,9 @@
+use thiserror::Error;
 use std::sync::Mutex;
 use std::sync::Arc;
 use std::sync::RwLock;
 
+use crate::errors::{Result, ChessError};
 use crate::piece;
 use crate::piece::PieceRef;
 use crate::piece::Piece;
@@ -24,6 +26,40 @@ impl TileRef {
 
      pub fn vacant(&self) -> bool {
           return self.piece.is_none()
+     }
+
+     pub fn set_piece(&mut self, piece: Piece) -> Result<()> {
+          if self.piece.is_some() {
+               return Err(ChessError::TileActionError { why: format!("Could not replace tile's piece, there is already a {} here.", self.piece.unwrap().read().unwrap().name()) })
+          }
+          self.piece = Some(piece);
+          Ok(())
+     }
+
+     pub fn replace_piece(&mut self, piece: Piece) {
+          self.piece = Some(piece);
+     }
+
+     pub fn remove_piece(&mut self, piece: Piece) -> Result<()> {
+          if self.piece.is_none() {
+               return Err(ChessError::TileActionError { why: format!("Could not remove tile's piece, it is already vacant.") })
+          }
+          self.piece = Some(piece);
+          Ok(())
+     }
+
+     pub fn move_contained_piece(&mut self, target_tile: Tile) -> Result<()> {
+          if self.piece.is_none() {
+               return Err(ChessError::TileActionError { why: "Could not move contained piece, there is no piece to move.".to_string() })
+          }
+
+          let mut lock = target_tile.write().unwrap();
+          lock.set_piece(self.piece.clone().unwrap())?;
+          drop(lock);
+
+          self.piece = None;
+          
+          Ok(())
      }
 }
 
