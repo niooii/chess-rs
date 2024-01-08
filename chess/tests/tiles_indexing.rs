@@ -9,7 +9,7 @@ pub fn index_tiles() {
     assert!(board1.tile_at(0, 0).is_some());
     assert!(board1.tile_at(board1.width()-1, board1.height()-1).is_some());
 
-    let default = Board::default();
+    let default = Board::new(8, 8);
 
     assert!(default.tile_at(0, 0).is_some());
     assert!(default.tile_at(7, 7).is_some());

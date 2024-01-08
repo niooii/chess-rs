@@ -1,5 +1,5 @@
 use crate::{tile::Tile, piece::Piece};
-use crate::errors::Result;
+use crate::error::Result;
 
 #[derive(Clone, Copy)]
 pub struct Coord {
@@ -58,13 +58,38 @@ impl Move {
     }
 
     // actual stuff
-    pub fn execute(self) -> MoveLog {
+    pub fn execute(self) -> Result<MoveLog> {
 
-        
+        let mut killed_piece = None;
+        let mut target_lock = self.target_tile.write().unwrap();
+        if target_lock.occupied() {
+            killed_piece = target_lock.piece();
 
-        MoveLog {
+            let mut killed_lock = killed_piece.as_ref().unwrap().write().unwrap();
+            killed_lock.kill();
+            drop(killed_lock);
 
+            target_lock.remove_piece()?;
         }
+
+        drop(target_lock);
+
+        self.from_tile.write().unwrap().move_contained_piece(self.target_tile.clone())?;
+
+        Ok(
+            MoveLog {
+                from: self.from,
+                to: self.to,
+
+                moved_piece: self.piece,
+                killed_piece: killed_piece,
+                // TODO: IMPLEMENT LATER!
+                promoted_to: None,
+
+                moved_from: self.from_tile,
+                moved_to: self.target_tile
+            }
+        )
     }
 }
 

@@ -4,4 +4,6 @@ pub mod piece;
 pub mod piece_rules;
 pub mod game;
 pub mod r#move;
-pub mod errors;
+pub mod error;
+pub mod team;
+pub mod piece_set;

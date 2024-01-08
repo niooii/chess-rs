@@ -1,12 +1,14 @@
 // support up to four teams later
 
-use crate::tile::{Tile, TileBuilder};
+use crate::{tile::{Tile, TileBuilder}, piece::Piece, piece_set::PieceSet};
+use crate::error::Result;
 
 pub struct Board {
     width: u32,
     height: u32,
     
     tiles: Box<[Box<[Tile]>]>,
+    piece_sets: Vec<PieceSet>
 }
 
 impl Board {
@@ -14,7 +16,10 @@ impl Board {
         let mut tiles = Vec::with_capacity(h as usize);
         
         for _ in 0..h {
-            let row = vec![TileBuilder::new().build(); w as usize];
+            let mut row = Vec::<Tile>::with_capacity(w as usize);
+            for _ in 0..w {
+                row.push(TileBuilder::new().build());
+            }
             tiles.push(row.into_boxed_slice());
         }
 
@@ -23,17 +28,17 @@ impl Board {
             height: h,
 
             // mistake, assume this constructor exists
-            tiles: tiles.into_boxed_slice()
+            tiles: tiles.into_boxed_slice(),
+            piece_sets: Vec::new()
         }
     }
 
-    pub fn default() -> Self {
-        Self {
-            width: 8,
-            height: 8,
+    pub fn add_piece_set(&mut self, set: PieceSet, tile: Tile) -> Result<()> {
+        self.piece_sets.push(set);
+        
 
-            tiles: vec![vec![TileBuilder::new().build(); 8].into_boxed_slice(); 8].into_boxed_slice()
-        }
+
+        Ok(())
     }
 
     /// TODO: implement error checking later (out of bounds)
@@ -46,6 +51,27 @@ impl Board {
 
         None
     }
+
+    // for debugging stuff
+    pub fn print_state(&self) {
+        let mut board_str = String::new();
+        for y in 0..self.height {
+            for x in 0..self.width {
+                let tile = self.tile_at(x, y).unwrap();
+                let maybe_piece = tile.read().unwrap().piece();
+
+                if let Some(p) = maybe_piece {
+                    let first_letter = p.read().unwrap().name().chars().nth(0).unwrap();
+                    board_str.push(first_letter);
+                } else {
+                    board_str.push(' ');
+                }
+                board_str.push(' ');
+            }
+            board_str.push('\n');
+        }
+        println!("{}", board_str);
+    }
 }
 
 // ooh ooh aah aah
@@ -56,5 +82,9 @@ impl Board {
 
     pub fn height(&self) -> u32 {
         return self.height
+    }
+
+    pub fn piece_sets(&self) -> Vec<PieceSet> {
+        self.piece_sets.clone()
     }
 }

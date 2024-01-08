@@ -7,5 +7,15 @@ pub enum ChessError {
     #[error("Error with tile.")]
     TileActionError {
         why: String
+    },
+    
+    #[error("Error creating piece.")]
+    PieceCreationError {
+        why: String
+    }
+    
+    #[error("Error validating game.")]
+    GameValidationError {
+        why: String
     }
 }

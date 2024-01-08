@@ -1,23 +1,16 @@
 use std::sync::{RwLock, Arc};
 
-use crate::{piece_rules::{MoveRules, NthMoveRules}};
+use crate::{piece_rules::{MoveRules, NthMoveRules}, team::Team, error::ChessError, r#move::Coord};
+use crate::error::Result;
 
 /// custom type to reduce boilerplate
 /// piece uses arc internally
 pub type Piece = Arc<RwLock<PieceRef>>;
 
-/// creates a new copy of the underlying data.
-pub fn clone_piece(original: Piece) -> Piece {
-    Arc::new(
-        RwLock::new(
-            original.read().unwrap().clone()
-        )
-    )
-}
-
 #[derive(Clone)]
 pub struct PieceRef {
     name: String,
+    team: Option<Arc<Team>>,
     points: u16,
     move_rules: Vec<MoveRules>,
     kill_rules: Vec<MoveRules>,
@@ -31,12 +24,26 @@ pub struct PieceRef {
     // allows kill move rules to be used for moving
     use_kill_for_moves: bool,
     // allows default move rules (AND nth move rules) to be used for killing
-    use_moves_for_kills: bool
+    use_moves_for_kills: bool,
+
+    // internals
+    // this is calculated relative to the starting direction of the peice's team. 
+    // imagine flipping the board 90 degrees, or 180, or whatever
+    // and then the coordinate would be relative to THAT board.
+    relative_starting_coord: Coord
 }
 
 impl PieceRef {
     pub fn name(&self) -> &str {
         &self.name
+    }
+
+    pub fn team(&self) -> Option<Arc<Team>> {
+        self.team.clone()
+    }
+
+    pub fn team_unchecked(&self) -> Arc<Team> {
+        self.team.as_ref().unwrap().clone()
     }
 
     pub fn points(&self) -> u16 {
@@ -70,11 +77,16 @@ impl PieceRef {
     pub fn revive(&mut self) {
         self.alive = true;
     } 
+
+    pub fn set_team(&mut self, team: Arc<Team>) {
+        self.team = Some(team);
+    }
 }
 
 #[derive(Default)]
 pub struct PieceBuilder {
     name: String,
+    team: Option<Arc<Team>>,
     points: u16,
     move_rules: Vec<MoveRules>,
     kill_rules: Vec<MoveRules>,
@@ -87,7 +99,8 @@ pub struct PieceBuilder {
     // allows kill move rules to be used for moving
     use_kill_for_moves: bool,
     // allows default move rules (AND nth move rules) to be used for killing
-    use_moves_for_kills: bool
+    use_moves_for_kills: bool,
+    rel_start_coord: Option<Coord>
 }
 
 impl PieceBuilder {
@@ -140,32 +153,58 @@ impl PieceBuilder {
         self
     }
 
-    pub fn build(mut self) -> Piece {
+    pub fn team(mut self, team: Arc<Team>) -> Self {
+        self.team = Some(team);
+        self
+    }
+
+    pub fn build(mut self) -> Result<Piece> {
+        if self.team.is_none() {
+            return Err(ChessError::PieceCreationError { why: "Piece needs a reference to a team.".to_string() });
+        }
+        if self.rel_start_coord.is_none() {
+            return Err(ChessError::PieceCreationError { why: "Piece needs a relative starting coordinate.".to_string() });
+        }
+        Ok(
+            Arc::new(
+                RwLock::new(
+                    PieceRef {
+                        name: self.name,
+                        team: self.team,
+                        points: self.points,
+                        move_rules: self.move_rules,
+                        kill_rules: self.kill_rules,
+                        nth_move_rules: self.nth_move_rules,
+                        alive: true,
+                        jump_immune: self.jump_immune,
+                        pierce_immune: self.pierce_immune,
+                        use_kill_for_moves: self.use_kill_for_moves,
+                        use_moves_for_kills: self.use_moves_for_kills,
+                        relative_starting_coord: self.rel_start_coord.unwrap()
+                    }
+                )
+            )
+        )
+    }
+
+    /// creates a new copy of the underlying data.
+    pub fn clone_piece(original: &Piece) -> Piece {
         Arc::new(
             RwLock::new(
-                PieceRef {
-                    name: self.name,
-                    points: self.points,
-                    move_rules: self.move_rules,
-                    kill_rules: self.kill_rules,
-                    nth_move_rules: self.nth_move_rules,
-                    alive: true,
-                    jump_immune: self.jump_immune,
-                    pierce_immune: self.pierce_immune,
-                    use_kill_for_moves: self.use_kill_for_moves,
-                    use_moves_for_kills: self.use_moves_for_kills
-                }
+                original.read().unwrap().clone()
             )
         )
     }
 }
 
 pub mod defaults {
-    use crate::{piece::PieceRef, piece_rules::{MoveRules, MoveVec, Direction, Distance, NthMoveRules}};
+    use std::sync::Arc;
+
+    use crate::{piece::PieceRef, piece_rules::{MoveRules, MoveVec, Direction, Distance, NthMoveRules}, team::Team};
 
     use super::{PieceBuilder, Piece};
 
-    pub fn pawn() -> Piece {
+    pub fn pawn(team: Arc<Team>) -> Piece {
         let move_rules = vec![
             MoveRules::blunt(
                 vec![MoveVec::new(Distance::finite(1), Direction::Up)]
@@ -195,14 +234,15 @@ pub mod defaults {
 
         PieceBuilder::new()
             .name("Pawn".to_string())
+            .team(team)
             .points(1)
             .move_rules(move_rules)
             .kill_rules(kill_rules)
             .nth_move_rules(nth_move_rules)
-            .build()
+            .build().unwrap()
     }
     
-    pub fn rook() -> Piece {
+    pub fn rook(team: Arc<Team>) -> Piece {
         let move_rules = vec![
             MoveRules::blunt(
                 vec![
@@ -220,15 +260,16 @@ pub mod defaults {
 
         PieceBuilder::new()
             .name("Rook".to_string())
+            .team(team)
             .points(1)
             .move_rules(move_rules)
             .kill_rules(kill_rules)
             .nth_move_rules(nth_move_rules)
             .use_moves_for_kills(true)
-            .build()
+            .build().unwrap()
     }
 
-    pub fn bishop() -> Piece {
+    pub fn bishop(team: Arc<Team>) -> Piece {
         let move_rules = vec![
             MoveRules::blunt(
                 vec![
@@ -246,15 +287,16 @@ pub mod defaults {
 
         PieceBuilder::new()
             .name("Bishop".to_string())
+            .team(team)
             .points(1)
             .move_rules(move_rules)
             .kill_rules(kill_rules)
             .nth_move_rules(nth_move_rules)
             .use_moves_for_kills(true)  
-            .build()
+            .build().unwrap()
     }
 
-    pub fn knight() -> Piece {
+    pub fn knight(team: Arc<Team>) -> Piece {
         let move_rules = vec![
             MoveRules::knight_jump(2, 1)
         ];
@@ -265,15 +307,16 @@ pub mod defaults {
 
         PieceBuilder::new()
             .name("Knight".to_string())
+            .team(team)
             .points(1)
             .move_rules(move_rules)
             .kill_rules(kill_rules)
             .nth_move_rules(nth_move_rules)
             .use_moves_for_kills(true)
-            .build()
+            .build().unwrap()
     }
 
-    pub fn queen() -> Piece {
+    pub fn queen(team: Arc<Team>) -> Piece {
         let move_rules = vec![
             MoveRules::blunt(
                 vec![
@@ -295,15 +338,16 @@ pub mod defaults {
 
         PieceBuilder::new()
             .name("Queen".to_string())
+            .team(team)
             .points(1)
             .move_rules(move_rules)
             .kill_rules(kill_rules)
             .nth_move_rules(nth_move_rules)
             .use_moves_for_kills(true)
-            .build()
+            .build().unwrap()
     }
 
-    pub fn king() -> Piece {
+    pub fn king(team: Arc<Team>) -> Piece {
         let move_rules = vec![
             MoveRules::radius(1, false)
         ];
@@ -314,11 +358,12 @@ pub mod defaults {
 
         PieceBuilder::new()
             .name("King".to_string())
+            .team(team)
             .points(1)
             .move_rules(move_rules)
             .kill_rules(kill_rules)
             .nth_move_rules(nth_move_rules)
             .use_moves_for_kills(true)
-            .build()
+            .build().unwrap()
     }
 }

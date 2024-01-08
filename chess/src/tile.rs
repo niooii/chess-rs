@@ -3,7 +3,7 @@ use std::sync::Mutex;
 use std::sync::Arc;
 use std::sync::RwLock;
 
-use crate::errors::{Result, ChessError};
+use crate::error::{Result, ChessError};
 use crate::piece;
 use crate::piece::PieceRef;
 use crate::piece::Piece;
@@ -30,7 +30,8 @@ impl TileRef {
 
      pub fn set_piece(&mut self, piece: Piece) -> Result<()> {
           if self.piece.is_some() {
-               return Err(ChessError::TileActionError { why: format!("Could not replace tile's piece, there is already a {} here.", self.piece.unwrap().read().unwrap().name()) })
+               let read_lock = self.piece.as_ref().unwrap().read().unwrap();
+               return Err(ChessError::TileActionError { why: format!("Could not replace tile's piece, there is already a {} here.", read_lock.name()) })
           }
           self.piece = Some(piece);
           Ok(())
@@ -40,11 +41,11 @@ impl TileRef {
           self.piece = Some(piece);
      }
 
-     pub fn remove_piece(&mut self, piece: Piece) -> Result<()> {
+     pub fn remove_piece(&mut self) -> Result<()> {
           if self.piece.is_none() {
                return Err(ChessError::TileActionError { why: format!("Could not remove tile's piece, it is already vacant.") })
           }
-          self.piece = Some(piece);
+          self.piece = None;
           Ok(())
      }
 
