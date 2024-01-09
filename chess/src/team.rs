@@ -16,6 +16,7 @@ pub enum StartInfo {
 pub struct Team {
     name: String,
     start_info: StartInfo,
+    current_move_number: u32
 }
 
 impl Team {
@@ -23,6 +24,7 @@ impl Team {
         Self {
             name,
             start_info: start_direction,
+            current_move_number: 0
         }
     }
 
@@ -32,5 +34,18 @@ impl Team {
 
     pub fn start_info(&self) -> StartInfo {
         self.start_info
+    }
+
+    pub fn current_move_number(&self) -> u32 {
+        self.current_move_number
+    }
+
+    pub fn increment_move(&mut self) {
+        self.current_move_number += 1;
+    }
+
+    
+    pub fn decrement_move(&mut self) {
+        self.current_move_number -= 1;
     }
 }

@@ -12,4 +12,7 @@ pub enum ChessError {
 
     #[error("Error validating game.")]
     GameValidationError { why: String },
+
+    #[error("Error calculating move.")]
+    MoveCalculationError { why: String },
 }

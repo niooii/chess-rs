@@ -39,6 +39,7 @@ impl PieceSet {
     pub fn add_piece(&mut self, piece: Piece, rel_starting_coord: Coord) -> Result<()> {
         let mut lock = piece.write().unwrap();
         lock.set_team(self.team.clone());
+        lock.set_rel_pos(rel_starting_coord);
         drop(lock);
         self.pieces.push(piece);
         self.starting_coords.push(rel_starting_coord);

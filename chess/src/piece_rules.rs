@@ -1,3 +1,5 @@
+use crate::{team::StartInfo, r#move::Coord};
+
 // will be handled differently depending on team
 #[derive(Clone, Copy)]
 pub enum Direction {
@@ -9,6 +11,50 @@ pub enum Direction {
     LeftDown,
     RightUp,
     RightDown,
+}
+
+impl Direction {
+    pub fn rel_to_absolute(&self, start_info: StartInfo) -> Self {
+        match start_info {
+            StartInfo::Bottom { .. } => self.clone(),
+            StartInfo::Top { .. } => {
+                match self {
+                    Direction::Left => Direction::Right,
+                    Direction::Right => Direction::Left,
+                    Direction::Up => Direction::Down,
+                    Direction::Down => Direction::Up,
+                    Direction::LeftUp => Direction::RightDown,
+                    Direction::LeftDown => Direction::RightUp,
+                    Direction::RightUp => Direction::LeftDown,
+                    Direction::RightDown => Direction::LeftUp,
+                }
+            },
+            StartInfo::Left { .. } => {
+                match self {
+                    Direction::Left => Direction::Up,
+                    Direction::Right => Direction::Down,
+                    Direction::Up => Direction::Right,
+                    Direction::Down => Direction::Left,
+                    Direction::LeftUp => Direction::RightUp,
+                    Direction::LeftDown => Direction::LeftUp,
+                    Direction::RightUp => Direction::RightDown,
+                    Direction::RightDown => Direction::LeftDown,
+                }
+            },
+            StartInfo::Right { .. } => {
+                match self {
+                    Direction::Left => Direction::Down,
+                    Direction::Right => Direction::Up,
+                    Direction::Up => Direction::Left,
+                    Direction::Down => Direction::Right,
+                    Direction::LeftUp => Direction::LeftDown,
+                    Direction::LeftDown => Direction::RightDown,
+                    Direction::RightUp => Direction::LeftUp,
+                    Direction::RightDown => Direction::RightUp,
+                }
+            }
+        }
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -40,16 +86,33 @@ impl MoveVec {
             direction,
         }
     }
+
+    pub fn distance(&self) -> Distance {
+        self.distance
+    }
+
+    pub fn direction(&self) -> Direction {
+        self.direction
+    }
+
+    pub fn rel_to_absolute(&self, start_info: StartInfo) -> Self {
+        Self {
+            distance: self.distance,
+            direction: self.direction.rel_to_absolute(start_info)
+        }
+    }
 }
 
 #[derive(Clone)]
 pub enum MoveRules {
-    // jumps tiles (knight type movement)
+    // a singular jump rule.
     Jump {
+        translation: Coord
+    },
+
+    // In a direction, piece can jump over every piece/choose one to eat.
+    LineJump {
         move_info: Vec<MoveVec>,
-        // if this is true, it is applied once after processing all the MoveVecs.
-        // otherwise, applies a jump for every MoveVec.
-        combine_directions: bool,
     },
 
     // can pierce through multiple
@@ -83,9 +146,14 @@ pub enum MoveRules {
 }
 
 impl MoveRules {
-    pub fn jump(moves: Vec<MoveVec>, combine_directions: bool) -> MoveRules {
+    pub fn jump(translation: Coord) -> MoveRules {
         MoveRules::Jump {
-            combine_directions,
+            translation,
+        }
+    }
+
+    pub fn line_jump(moves: Vec<MoveVec>) -> MoveRules {
+        MoveRules::LineJump {
             move_info: moves,
         }
     }

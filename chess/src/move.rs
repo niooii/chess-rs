@@ -1,4 +1,5 @@
 use crate::error::Result;
+use crate::team::StartInfo;
 use crate::{piece::Piece, tile::Tile};
 
 #[derive(Clone, Copy, Debug)]
@@ -20,6 +21,14 @@ impl Coord {
         self.y
     }
 
+    pub fn set_x(&mut self, x: u32) {
+        self.x = x;
+    }
+
+    pub fn set_y(&mut self, y: u32) {
+        self.y = y;
+    }
+
     pub fn add(self, other: &Coord) -> Self {
         Self {
             x: self.x + other.x(),
@@ -31,6 +40,8 @@ impl Coord {
 pub struct Move {
     from: Coord,
     to: Coord,
+    // to translate the piece's relative position when executing the move.
+    rel_translation: Coord,
 
     piece: Piece,
     from_tile: Tile,
@@ -38,10 +49,11 @@ pub struct Move {
 }
 
 impl Move {
-    pub fn new(piece: Piece, from: Coord, to: Coord, from_tile: Tile, target_tile: Tile) -> Self {
+    pub fn new(piece: Piece, from: Coord, to: Coord, rel_translation: Coord, from_tile: Tile, target_tile: Tile) -> Self {
         Self {
             from,
             to,
+            rel_translation,
             piece,
             from_tile,
             target_tile,
@@ -55,6 +67,11 @@ impl Move {
 
     pub fn to(&self) -> Coord {
         self.to
+    
+    }
+
+    pub fn rel_translation(&self) -> Coord {
+        self.rel_translation
     }
 
     pub fn piece(&self) -> Piece {
@@ -89,6 +106,10 @@ impl Move {
             .write()
             .unwrap()
             .move_contained_piece(self.target_tile.clone())?;
+
+        let mut write_lock = self.piece.write().unwrap();
+        write_lock.translate_rel_pos(self.rel_translation.x(), self.rel_translation.y());
+        drop(write_lock);
 
         Ok(MoveLog {
             from: self.from,

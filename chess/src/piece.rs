@@ -35,6 +35,7 @@ pub struct PieceRef {
     // imagine flipping the board 90 degrees, or 180, or whatever
     // and then the coordinate would be relative to THAT board.
     // relative_starting_coord: Coord
+    rel_pos: Option<Coord>
 }
 
 impl PieceRef {
@@ -52,6 +53,18 @@ impl PieceRef {
 
     pub fn points(&self) -> u16 {
         self.points
+    }
+
+    pub fn move_rules(&self) -> &Vec<MoveRules> {
+        &self.move_rules
+    }
+
+    pub fn kill_rules(&self) -> &Vec<MoveRules> {
+        &self.kill_rules
+    }
+
+    pub fn nth_move_rules(&self) -> &Vec<NthMoveRules> {
+        &self.nth_move_rules
     }
 
     pub fn is_alive(&self) -> bool {
@@ -88,6 +101,23 @@ impl PieceRef {
 
     pub fn set_team(&mut self, team: Arc<Team>) {
         self.team = Some(team);
+    }
+
+    pub fn set_rel_pos(&mut self, coord: Coord) {
+        self.rel_pos = Some(coord);
+    }
+
+    pub fn rel_pos(&self) -> Option<Coord> {
+        self.rel_pos
+    }
+
+    pub fn rel_pos_unchecked(&self) -> Coord {
+        self.rel_pos.unwrap()
+    }
+
+    pub fn translate_rel_pos(&mut self, x: u32, y: u32) {
+        self.rel_pos.unwrap().set_x(self.rel_pos.unwrap().x() + x);
+        self.rel_pos.unwrap().set_y(self.rel_pos.unwrap().y() + y);
     }
 }
 
@@ -181,6 +211,7 @@ impl PieceBuilder {
             pierce_immune: self.pierce_immune,
             use_kill_for_moves: self.use_kill_for_moves,
             use_moves_for_kills: self.use_moves_for_kills,
+            rel_pos: None
         })))
     }
 
