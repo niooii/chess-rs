@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use crate::error::Result;
+use crate::piece::{self, PieceBuilder};
 use crate::{piece::Piece, r#move::Coord, team::Team};
 
 // TODO: instead of populatiang manually or whatever, give each piece a relative starting coord and popullate by looping through piecesets.
@@ -48,5 +49,19 @@ impl PieceSet {
     pub fn alive_pieces(&self) -> () {
         // self.pieces.iter().filter(|p| p.read().unwrap().is_alive())
         todo!();
+    }
+
+    // makes a copy of all the data for another team.
+    pub fn clone_for_team(&self, team: Arc<Team>) -> Self {
+
+        Self {
+            team,
+            pieces: {
+                self.pieces.iter().map(|p| {
+                    PieceBuilder::clone_piece(p)
+                }).collect()
+            },
+            starting_coords: self.starting_coords.clone()
+        }
     }
 }

@@ -113,7 +113,7 @@ impl Board {
                     let first_letter = p.read().unwrap().name().chars().nth(0).unwrap();
                     board_str.push(first_letter);
                 } else {
-                    board_str.push('X');
+                    board_str.push(' ');
                 }
                 board_str.push(' ');
             }
