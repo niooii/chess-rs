@@ -3,10 +3,11 @@ use std::sync::Arc;
 use crate::board::Board;
 use crate::error::{ChessError, Result};
 use crate::piece::{self, Piece, PieceBuilder};
-use crate::piece_rules::MoveRules;
+use crate::piece_rules::{MoveRules, Distance, Direction};
 use crate::piece_set::PieceSet;
-use crate::r#move::{Coord, Move};
+use crate::r#move::{Move, Coord};
 use crate::team::{StartInfo, Team};
+use crate::vec2::Vec2;
 
 pub struct Game {
     board: Board,
@@ -84,6 +85,7 @@ impl Game {
         Ok(())
     }
 
+    // diabolical logic implementation
     pub fn calculate_moves_for(&self, team_name: String) -> Result<Vec<Move>> {
         let mut moves = Vec::<Move>::new();
 
@@ -109,16 +111,82 @@ impl Game {
                         todo!();
                     },
                     MoveRules::LineJump { move_info } => {
-                        for move_vec in move_info {
-                            let move_vec = move_vec.rel_to_absolute(team.start_info());
-                            
-                            
-                        }
+                        todo!();
                     }
                     MoveRules::Pierce { move_info, max_points } => {
-
+                        todo!();
                     },
-                    MoveRules::Blunt { move_info } => todo!(),
+                    MoveRules::Blunt { move_info } => {
+                        'process_move_vecs: for move_vec in move_info {
+                            let start_info = team.start_info();
+                            let abs_move_vec = move_vec.rel_to_absolute(start_info);
+                            let rel_pos = r_lock.rel_pos_unchecked();
+                            
+                            let abs_pos = board.rel_coord_to_absolute(rel_pos, start_info);
+
+                            let offset_vec = abs_move_vec.direction().as_vec();
+                            
+                            match abs_move_vec.distance() {
+                                Distance::Finite { distance } => {
+                                    for n in 1..=distance {
+                                        let target_coord = abs_pos.translate(&(offset_vec.mul(n as i32)));
+                                        // if this triggers, we are out of bounds on the negative direction.
+                                        if target_coord.is_err() {
+                                            continue 'process_move_vecs;
+                                        }
+
+                                        let target_coord = target_coord.unwrap();
+
+                                        // if tile is none, we are out of bounds on the positive direction.
+                                        if let Some(t) = board.tile_at(target_coord.x(), target_coord.y()) {
+                                            // IMPLEMENT REL_TRANSLATION LATER IMPORTANT TODO!
+                                            moves.push(
+                                                Move::new(piece.clone(), abs_pos, target_coord, Coord::new(0,0), 
+                                                board.tile_at(abs_pos.x(), abs_pos.y()).unwrap(), 
+                                                t.clone())
+                                            );
+
+                                            // if there was a piece here stop and go to next direction or something
+                                            if t.read().unwrap().occupied() {
+                                                continue 'process_move_vecs;
+                                            }
+                                        } else {
+                                            continue 'process_move_vecs;
+                                        }
+                                    }
+                                },
+                                Distance::Infinite => {
+                                    let mut idx = 1_u32;
+                                    let mut target_coord = abs_pos.translate(&offset_vec.mul(idx as i32));
+
+                                    while target_coord.is_ok() {
+
+                                        let target_coord_inner = target_coord.unwrap();
+
+                                        // if tile is none, we are out of bounds on the positive direction.
+                                        if let Some(t) = board.tile_at(target_coord_inner.x(), target_coord_inner.y()) {
+                                            // IMPLEMENT REL_TRANSLATION LATER IMPORTANT TODO!
+                                            moves.push(
+                                                Move::new(piece.clone(), abs_pos, target_coord_inner, Coord::new(0,0), 
+                                                board.tile_at(abs_pos.x(), abs_pos.y()).unwrap(), 
+                                                t.clone())
+                                            );
+
+                                            // if there was a piece here stop and go to next direction or something
+                                            if t.read().unwrap().occupied() {
+                                                continue 'process_move_vecs;
+                                            }
+                                        } else {
+                                            continue 'process_move_vecs;
+                                        }
+
+                                        idx += 1;
+                                        target_coord = abs_pos.translate(&offset_vec.mul(idx as i32));
+                                    }
+                                },
+                            }
+                        }
+                    },
                     MoveRules::Radius { tiles, jump } => todo!(),
                     MoveRules::KnightJump { radius, offset } => todo!(),
                 }

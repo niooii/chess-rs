@@ -15,4 +15,7 @@ pub enum ChessError {
 
     #[error("Error calculating move.")]
     MoveCalculationError { why: String },
+
+    #[error("Error translating coordinate.")]
+    CoordTranslationError { why: String },
 }

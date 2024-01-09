@@ -1,4 +1,4 @@
-use crate::{team::StartInfo, r#move::Coord};
+use crate::{team::StartInfo, r#move::Coord, vec2::Vec2};
 
 // will be handled differently depending on team
 #[derive(Clone, Copy)]
@@ -53,6 +53,19 @@ impl Direction {
                     Direction::RightDown => Direction::RightUp,
                 }
             }
+        }
+    }
+
+    pub fn as_vec(&self) -> Vec2 {
+        match &self {
+            Direction::Left => Vec2::new(-1, 0),
+            Direction::Right => Vec2::new(1, 0),
+            Direction::Up => Vec2::new(0, 1),
+            Direction::Down => Vec2::new(0, -1),
+            Direction::LeftUp => Vec2::new(-1, 1),
+            Direction::LeftDown => Vec2::new(-1,-1),
+            Direction::RightUp => Vec2::new(1, 1),
+            Direction::RightDown => Vec2::new(1, -1),
         }
     }
 }

@@ -1,5 +1,6 @@
-use crate::error::Result;
+use crate::error::{Result, ChessError};
 use crate::team::StartInfo;
+use crate::vec2::Vec2;
 use crate::{piece::Piece, tile::Tile};
 
 #[derive(Clone, Copy, Debug)]
@@ -29,11 +30,25 @@ impl Coord {
         self.y = y;
     }
 
-    pub fn add(self, other: &Coord) -> Self {
+    pub fn add(&self, other: &Coord) -> Self {
         Self {
             x: self.x + other.x(),
             y: self.y + other.y(),
         }
+    }
+
+    // TODO! handle overflows later.
+    pub fn translate(&self, vec: &Vec2) -> Result<Self> {
+        if self.x as i32 + vec.x() < 0 || self.y as i32 + vec.y() < 0 {
+            return Err(ChessError::CoordTranslationError { why: "Resultant coordinate has a value under 0.".to_string() });
+        }
+
+        Ok(
+            Self {
+                x: (self.x as i32 + vec.x()) as u32,
+                y: (self.y as i32 + vec.y()) as u32
+            }
+        )
     }
 }
 

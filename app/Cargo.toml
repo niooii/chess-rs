@@ -8,4 +8,4 @@ edition = "2021"
 [dependencies]
 chess = {path="../chess"}
 chess_engine = {path="../chess_engine"}
-sdl2 = {version="0.36.0"}
+sdl2 = {version="0.36.0", features = ["bundled"]}

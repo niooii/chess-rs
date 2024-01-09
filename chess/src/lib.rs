@@ -7,3 +7,4 @@ pub mod piece_rules;
 pub mod piece_set;
 pub mod team;
 pub mod tile;
+pub mod vec2;
