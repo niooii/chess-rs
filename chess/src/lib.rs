@@ -1,9 +1,9 @@
 pub mod board;
-pub mod tile;
-pub mod piece;
-pub mod piece_rules;
+pub mod error;
 pub mod game;
 pub mod r#move;
-pub mod error;
-pub mod team;
+pub mod piece;
+pub mod piece_rules;
 pub mod piece_set;
+pub mod team;
+pub mod tile;

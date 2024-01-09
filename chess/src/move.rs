@@ -1,17 +1,29 @@
-use crate::{tile::Tile, piece::Piece};
 use crate::error::Result;
+use crate::{piece::Piece, tile::Tile};
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Coord {
     x: u32,
-    y: u32
+    y: u32,
 }
 
 impl Coord {
     pub fn new(x: u32, y: u32) -> Self {
+        Self { x, y }
+    }
+
+    pub fn x(&self) -> u32 {
+        self.x
+    }
+
+    pub fn y(&self) -> u32 {
+        self.y
+    }
+
+    pub fn add(self, other: &Coord) -> Self {
         Self {
-            x,
-            y
+            x: self.x + other.x(),
+            y: self.y + other.y(),
         }
     }
 }
@@ -22,7 +34,7 @@ pub struct Move {
 
     piece: Piece,
     from_tile: Tile,
-    target_tile: Tile
+    target_tile: Tile,
 }
 
 impl Move {
@@ -32,7 +44,7 @@ impl Move {
             to,
             piece,
             from_tile,
-            target_tile
+            target_tile,
         }
     }
 
@@ -59,7 +71,6 @@ impl Move {
 
     // actual stuff
     pub fn execute(self) -> Result<MoveLog> {
-
         let mut killed_piece = None;
         let mut target_lock = self.target_tile.write().unwrap();
         if target_lock.occupied() {
@@ -74,22 +85,23 @@ impl Move {
 
         drop(target_lock);
 
-        self.from_tile.write().unwrap().move_contained_piece(self.target_tile.clone())?;
+        self.from_tile
+            .write()
+            .unwrap()
+            .move_contained_piece(self.target_tile.clone())?;
 
-        Ok(
-            MoveLog {
-                from: self.from,
-                to: self.to,
+        Ok(MoveLog {
+            from: self.from,
+            to: self.to,
 
-                moved_piece: self.piece,
-                killed_piece: killed_piece,
-                // TODO: IMPLEMENT LATER!
-                promoted_to: None,
+            moved_piece: self.piece,
+            killed_piece: killed_piece,
+            // TODO: IMPLEMENT LATER!
+            promoted_to: None,
 
-                moved_from: self.from_tile,
-                moved_to: self.target_tile
-            }
-        )
+            moved_from: self.from_tile,
+            moved_to: self.target_tile,
+        })
     }
 }
 
@@ -102,7 +114,7 @@ pub struct MoveLog {
     promoted_to: Option<Piece>,
 
     moved_from: Tile,
-    moved_to: Tile
+    moved_to: Tile,
 }
 
 impl MoveLog {
@@ -124,7 +136,7 @@ impl MoveLog {
             let mut kp_lock = piece_ref.write().unwrap();
             kp_lock.revive();
             drop(kp_lock);
-            
+
             lock.set_piece(self.killed_piece.unwrap())?;
         }
 

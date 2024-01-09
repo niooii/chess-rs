@@ -1,7 +1,12 @@
-use std::sync::{RwLock, Arc};
+use std::sync::{Arc, RwLock};
 
-use crate::{piece_rules::{MoveRules, NthMoveRules}, team::Team, error::ChessError, r#move::Coord};
 use crate::error::Result;
+use crate::{
+    error::ChessError,
+    piece_rules::{MoveRules, NthMoveRules},
+    r#move::Coord,
+    team::Team,
+};
 
 /// custom type to reduce boilerplate
 /// piece uses arc internally
@@ -16,7 +21,7 @@ pub struct PieceRef {
     kill_rules: Vec<MoveRules>,
     // applies on the nth move of the piece (start from 1, not 0)
     nth_move_rules: Vec<NthMoveRules>,
-    
+
     alive: bool,
     jump_immune: bool,
     pierce_immune: bool,
@@ -25,12 +30,11 @@ pub struct PieceRef {
     use_kill_for_moves: bool,
     // allows default move rules (AND nth move rules) to be used for killing
     use_moves_for_kills: bool,
-
     // internals
-    // this is calculated relative to the starting direction of the peice's team. 
+    // this is calculated relative to the starting direction of the peice's team.
     // imagine flipping the board 90 degrees, or 180, or whatever
     // and then the coordinate would be relative to THAT board.
-    relative_starting_coord: Coord
+    // relative_starting_coord: Coord
 }
 
 impl PieceRef {
@@ -65,18 +69,22 @@ impl PieceRef {
     pub fn can_use_kill_for_moves(&self) -> bool {
         self.use_kill_for_moves
     }
-    
+
     pub fn can_use_moves_for_kills(&self) -> bool {
         self.use_moves_for_kills
     }
 
+    // pub fn rel_start_coord(&self) -> Coord {
+    //     return self.relative_starting_coord;
+    // }
+
     pub fn kill(&mut self) {
         self.alive = false;
-    } 
+    }
 
     pub fn revive(&mut self) {
         self.alive = true;
-    } 
+    }
 
     pub fn set_team(&mut self, team: Arc<Team>) {
         self.team = Some(team);
@@ -92,7 +100,7 @@ pub struct PieceBuilder {
     kill_rules: Vec<MoveRules>,
     // applies on the nth move of the piece (start from 1, not 0)
     nth_move_rules: Vec<NthMoveRules>,
-    
+
     jump_immune: bool,
     pierce_immune: bool,
 
@@ -100,7 +108,6 @@ pub struct PieceBuilder {
     use_kill_for_moves: bool,
     // allows default move rules (AND nth move rules) to be used for killing
     use_moves_for_kills: bool,
-    rel_start_coord: Option<Coord>
 }
 
 impl PieceBuilder {
@@ -159,100 +166,78 @@ impl PieceBuilder {
     }
 
     pub fn build(mut self) -> Result<Piece> {
-        if self.team.is_none() {
-            return Err(ChessError::PieceCreationError { why: "Piece needs a reference to a team.".to_string() });
-        }
-        if self.rel_start_coord.is_none() {
-            return Err(ChessError::PieceCreationError { why: "Piece needs a relative starting coordinate.".to_string() });
-        }
-        Ok(
-            Arc::new(
-                RwLock::new(
-                    PieceRef {
-                        name: self.name,
-                        team: self.team,
-                        points: self.points,
-                        move_rules: self.move_rules,
-                        kill_rules: self.kill_rules,
-                        nth_move_rules: self.nth_move_rules,
-                        alive: true,
-                        jump_immune: self.jump_immune,
-                        pierce_immune: self.pierce_immune,
-                        use_kill_for_moves: self.use_kill_for_moves,
-                        use_moves_for_kills: self.use_moves_for_kills,
-                        relative_starting_coord: self.rel_start_coord.unwrap()
-                    }
-                )
-            )
-        )
+        // if self.team.is_none() {
+        //     return Err(ChessError::PieceCreationError { why: "Piece needs a reference to a team.".to_string() });
+        // }
+        Ok(Arc::new(RwLock::new(PieceRef {
+            name: self.name,
+            team: self.team,
+            points: self.points,
+            move_rules: self.move_rules,
+            kill_rules: self.kill_rules,
+            nth_move_rules: self.nth_move_rules,
+            alive: true,
+            jump_immune: self.jump_immune,
+            pierce_immune: self.pierce_immune,
+            use_kill_for_moves: self.use_kill_for_moves,
+            use_moves_for_kills: self.use_moves_for_kills,
+        })))
     }
 
     /// creates a new copy of the underlying data.
     pub fn clone_piece(original: &Piece) -> Piece {
-        Arc::new(
-            RwLock::new(
-                original.read().unwrap().clone()
-            )
-        )
+        Arc::new(RwLock::new(original.read().unwrap().clone()))
     }
 }
 
 pub mod defaults {
     use std::sync::Arc;
 
-    use crate::{piece::PieceRef, piece_rules::{MoveRules, MoveVec, Direction, Distance, NthMoveRules}, team::Team};
+    use crate::{
+        piece::PieceRef,
+        piece_rules::{Direction, Distance, MoveRules, MoveVec, NthMoveRules},
+        team::Team,
+    };
 
-    use super::{PieceBuilder, Piece};
+    use super::{Piece, PieceBuilder};
 
-    pub fn pawn(team: Arc<Team>) -> Piece {
-        let move_rules = vec![
-            MoveRules::blunt(
-                vec![MoveVec::new(Distance::finite(1), Direction::Up)]
-            )
-        ];
+    pub fn pawn() -> Piece {
+        let move_rules = vec![MoveRules::blunt(vec![MoveVec::new(
+            Distance::finite(1),
+            Direction::Up,
+        )])];
 
         let kill_rules = vec![
-            MoveRules::blunt(
-                vec![MoveVec::new(Distance::finite(1), Direction::LeftUp)]
-            ),
-            MoveRules::blunt(
-                vec![MoveVec::new(Distance::finite(1), Direction::RightUp)]
-            )
+            MoveRules::blunt(vec![MoveVec::new(Distance::finite(1), Direction::LeftUp)]),
+            MoveRules::blunt(vec![MoveVec::new(Distance::finite(1), Direction::RightUp)]),
         ];
 
-        let nth_move_rules = vec![
-            NthMoveRules::new(
-                vec![
-                    MoveRules::blunt(
-                        vec![MoveVec::new(Distance::finite(2), Direction::Up)]
-                    )
-                ],
-                1, 
-                false
-            )
-        ];
+        let nth_move_rules = vec![NthMoveRules::new(
+            vec![MoveRules::blunt(vec![MoveVec::new(
+                Distance::finite(2),
+                Direction::Up,
+            )])],
+            1,
+            false,
+        )];
 
         PieceBuilder::new()
             .name("Pawn".to_string())
-            .team(team)
             .points(1)
             .move_rules(move_rules)
             .kill_rules(kill_rules)
             .nth_move_rules(nth_move_rules)
-            .build().unwrap()
+            .build()
+            .unwrap()
     }
-    
-    pub fn rook(team: Arc<Team>) -> Piece {
-        let move_rules = vec![
-            MoveRules::blunt(
-                vec![
-                    MoveVec::new(Distance::infinite(), Direction::Up),
-                    MoveVec::new(Distance::infinite(), Direction::Down),
-                    MoveVec::new(Distance::infinite(), Direction::Left),
-                    MoveVec::new(Distance::infinite(), Direction::Right)
-                ]
-            )
-        ];
+
+    pub fn rook() -> Piece {
+        let move_rules = vec![MoveRules::blunt(vec![
+            MoveVec::new(Distance::infinite(), Direction::Up),
+            MoveVec::new(Distance::infinite(), Direction::Down),
+            MoveVec::new(Distance::infinite(), Direction::Left),
+            MoveVec::new(Distance::infinite(), Direction::Right),
+        ])];
 
         let kill_rules = Vec::new();
 
@@ -260,26 +245,22 @@ pub mod defaults {
 
         PieceBuilder::new()
             .name("Rook".to_string())
-            .team(team)
             .points(1)
             .move_rules(move_rules)
             .kill_rules(kill_rules)
             .nth_move_rules(nth_move_rules)
             .use_moves_for_kills(true)
-            .build().unwrap()
+            .build()
+            .unwrap()
     }
 
-    pub fn bishop(team: Arc<Team>) -> Piece {
-        let move_rules = vec![
-            MoveRules::blunt(
-                vec![
-                    MoveVec::new(Distance::infinite(), Direction::LeftUp),
-                    MoveVec::new(Distance::infinite(), Direction::LeftDown),
-                    MoveVec::new(Distance::infinite(), Direction::RightUp),
-                    MoveVec::new(Distance::infinite(), Direction::RightDown)
-                ]
-            )
-        ];
+    pub fn bishop() -> Piece {
+        let move_rules = vec![MoveRules::blunt(vec![
+            MoveVec::new(Distance::infinite(), Direction::LeftUp),
+            MoveVec::new(Distance::infinite(), Direction::LeftDown),
+            MoveVec::new(Distance::infinite(), Direction::RightUp),
+            MoveVec::new(Distance::infinite(), Direction::RightDown),
+        ])];
 
         let kill_rules = Vec::new();
 
@@ -287,50 +268,44 @@ pub mod defaults {
 
         PieceBuilder::new()
             .name("Bishop".to_string())
-            .team(team)
             .points(1)
             .move_rules(move_rules)
             .kill_rules(kill_rules)
             .nth_move_rules(nth_move_rules)
-            .use_moves_for_kills(true)  
-            .build().unwrap()
+            .use_moves_for_kills(true)
+            .build()
+            .unwrap()
     }
 
-    pub fn knight(team: Arc<Team>) -> Piece {
-        let move_rules = vec![
-            MoveRules::knight_jump(2, 1)
-        ];
-        
+    pub fn knight() -> Piece {
+        let move_rules = vec![MoveRules::knight_jump(2, 1)];
+
         let kill_rules = Vec::new();
 
         let nth_move_rules = Vec::new();
 
         PieceBuilder::new()
             .name("Knight".to_string())
-            .team(team)
             .points(1)
             .move_rules(move_rules)
             .kill_rules(kill_rules)
             .nth_move_rules(nth_move_rules)
             .use_moves_for_kills(true)
-            .build().unwrap()
+            .build()
+            .unwrap()
     }
 
-    pub fn queen(team: Arc<Team>) -> Piece {
-        let move_rules = vec![
-            MoveRules::blunt(
-                vec![
-                    MoveVec::new(Distance::infinite(), Direction::Up),
-                    MoveVec::new(Distance::infinite(), Direction::Down),
-                    MoveVec::new(Distance::infinite(), Direction::Left),
-                    MoveVec::new(Distance::infinite(), Direction::Right),
-                    MoveVec::new(Distance::infinite(), Direction::LeftUp),
-                    MoveVec::new(Distance::infinite(), Direction::LeftDown),
-                    MoveVec::new(Distance::infinite(), Direction::RightUp),
-                    MoveVec::new(Distance::infinite(), Direction::RightDown)
-                ]
-            )
-        ];
+    pub fn queen() -> Piece {
+        let move_rules = vec![MoveRules::blunt(vec![
+            MoveVec::new(Distance::infinite(), Direction::Up),
+            MoveVec::new(Distance::infinite(), Direction::Down),
+            MoveVec::new(Distance::infinite(), Direction::Left),
+            MoveVec::new(Distance::infinite(), Direction::Right),
+            MoveVec::new(Distance::infinite(), Direction::LeftUp),
+            MoveVec::new(Distance::infinite(), Direction::LeftDown),
+            MoveVec::new(Distance::infinite(), Direction::RightUp),
+            MoveVec::new(Distance::infinite(), Direction::RightDown),
+        ])];
 
         let kill_rules = Vec::new();
 
@@ -338,19 +313,17 @@ pub mod defaults {
 
         PieceBuilder::new()
             .name("Queen".to_string())
-            .team(team)
             .points(1)
             .move_rules(move_rules)
             .kill_rules(kill_rules)
             .nth_move_rules(nth_move_rules)
             .use_moves_for_kills(true)
-            .build().unwrap()
+            .build()
+            .unwrap()
     }
 
-    pub fn king(team: Arc<Team>) -> Piece {
-        let move_rules = vec![
-            MoveRules::radius(1, false)
-        ];
+    pub fn king() -> Piece {
+        let move_rules = vec![MoveRules::radius(1, false)];
 
         let kill_rules = Vec::new();
 
@@ -358,12 +331,12 @@ pub mod defaults {
 
         PieceBuilder::new()
             .name("King".to_string())
-            .team(team)
             .points(1)
             .move_rules(move_rules)
             .kill_rules(kill_rules)
             .nth_move_rules(nth_move_rules)
             .use_moves_for_kills(true)
-            .build().unwrap()
+            .build()
+            .unwrap()
     }
 }
