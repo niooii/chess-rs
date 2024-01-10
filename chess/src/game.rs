@@ -11,6 +11,7 @@ use crate::vec2::Vec2;
 
 pub struct Game {
     board: Board,
+    current_move: u32
 }
 
 impl Game {
@@ -53,11 +54,20 @@ impl Game {
 
         board.init()?;
 
-        Ok(Self { board })
+        Ok(
+            Self {
+                board, 
+                current_move: 0 
+            }
+        )
     }
 
     pub fn board(&self) -> &Board {
         &self.board
+    }
+
+    pub fn current_move(&self) -> u32 {
+        self.current_move
     }
 }
 
