@@ -1,8 +1,8 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLockReadGuard};
 
 use crate::board::Board;
 use crate::error::{ChessError, Result};
-use crate::piece::{self, Piece, PieceBuilder};
+use crate::piece::{self, Piece, PieceBuilder, PieceRef};
 use crate::piece_rules::{MoveRules, Distance, Direction};
 use crate::piece_set::PieceSet;
 use crate::r#move::{Move, Coord};
@@ -136,14 +136,23 @@ impl Game {
 
             // handle regular movemenet rules
             for rule in r_lock.move_rules() {
-                
+                Game::process_move_rule(rule, piece.clone(), team.clone(), board, &r_lock, &mut moves);
+            }
+
+            for nth_move_rule in r_lock.nth_move_rules() {
+                // TODO! increment move number later. REFACTOR MOVE SYSTEM. game.executeMove(Move), game.undoPrevious()
+                if r_lock.move_num() == nth_move_rule.nth_move() {
+                    for rule in nth_move_rule.move_rules() {
+                        Game::process_move_rule(rule, piece.clone(), team.clone(), board, &r_lock, &mut moves);
+                    }
+                }
             }
         }
 
         Ok(moves)
     }
 
-    fn calc_moves(move_rule: &MoveRules, moves: &mut Vec<Move>) {
+    fn process_move_rule(move_rule: &MoveRules, piece: Piece, team: Arc<Team>, board: &Board, piece_rlock: &RwLockReadGuard<PieceRef>, moves: &mut Vec<Move>) {
         match move_rule {
             MoveRules::Jump { translation } => {
                 todo!();
@@ -158,7 +167,7 @@ impl Game {
                 'process_move_vecs: for move_vec in move_info {
                     let start_info = team.start_info();
                     let abs_move_vec = move_vec.rel_to_absolute(start_info);
-                    let rel_pos = r_lock.rel_pos_unchecked();
+                    let rel_pos = piece_rlock.rel_pos_unchecked();
                     
                     let abs_pos = board.rel_coord_to_absolute(rel_pos, start_info);
 
@@ -177,17 +186,30 @@ impl Game {
 
                                 // if tile is none, we are out of bounds on the positive direction.
                                 if let Some(t) = board.tile_at(target_coord.x(), target_coord.y()) {
-                                    // IMPLEMENT REL_TRANSLATION LATER IMPORTANT TODO!
+                                    // if there was a piece here stop and go to next direction or something (only if u cant use move for kills)
+                                    let tile_rlock = t.read().unwrap();
+                                    if tile_rlock.occupied() {
+
+                                        // dont kill your teammates idiot 
+                                        if tile_rlock.team_on_tile_unchecked().name() == team.name() {
+                                            continue;
+                                        }
+                                        // if it can use move for kills, add it once and just skip the rest
+                                        if piece_rlock.can_use_moves_for_kills() {
+                                            moves.push(
+                                                Move::new(piece.clone(), abs_pos, target_coord, Coord::new(0,0), 
+                                                board.tile_at(abs_pos.x(), abs_pos.y()).unwrap(), 
+                                                t.clone())
+                                            );
+                                        }
+                                        continue 'process_move_vecs;
+                                    }
+                                    // TODO! IMPLEMENT REL_TRANSLATION LATER IMPORTANT TODO!
                                     moves.push(
                                         Move::new(piece.clone(), abs_pos, target_coord, Coord::new(0,0), 
                                         board.tile_at(abs_pos.x(), abs_pos.y()).unwrap(), 
                                         t.clone())
                                     );
-
-                                    // if there was a piece here stop and go to next direction or something
-                                    if t.read().unwrap().occupied() {
-                                        continue 'process_move_vecs;
-                                    }
                                 } else {
                                     continue 'process_move_vecs;
                                 }
@@ -199,21 +221,34 @@ impl Game {
 
                             while target_coord.is_ok() {
 
-                                let target_coord_inner = target_coord.unwrap();
+                                let target_coord_inner = target_coord.as_ref().unwrap();
 
                                 // if tile is none, we are out of bounds on the positive direction.
                                 if let Some(t) = board.tile_at(target_coord_inner.x(), target_coord_inner.y()) {
-                                    // IMPLEMENT REL_TRANSLATION LATER IMPORTANT TODO!
+                                    // if there was a piece here stop and go to next direction or something (only if u cant use move for kills)
+                                    let tile_rlock = t.read().unwrap();
+                                    if tile_rlock.occupied() {
+
+                                        // dont kill your teammates idiot 
+                                        if tile_rlock.team_on_tile_unchecked().name() == team.name() {
+                                            continue;
+                                        }
+                                        // if it can use move for kills, add it once and just skip the rest
+                                        if piece_rlock.can_use_moves_for_kills() {
+                                            moves.push(
+                                                Move::new(piece.clone(), abs_pos, target_coord_inner.clone(), Coord::new(0,0), 
+                                                board.tile_at(abs_pos.x(), abs_pos.y()).unwrap(), 
+                                                t.clone())
+                                            );
+                                        }
+                                        continue 'process_move_vecs;
+                                    }
+                                    // TODO! IMPLEMENT REL_TRANSLATION LATER IMPORTANT TODO!
                                     moves.push(
-                                        Move::new(piece.clone(), abs_pos, target_coord_inner, Coord::new(0,0), 
+                                        Move::new(piece.clone(), abs_pos, target_coord_inner.clone(), Coord::new(0,0), 
                                         board.tile_at(abs_pos.x(), abs_pos.y()).unwrap(), 
                                         t.clone())
                                     );
-
-                                    // if there was a piece here stop and go to next direction or something
-                                    if t.read().unwrap().occupied() {
-                                        continue 'process_move_vecs;
-                                    }
                                 } else {
                                     continue 'process_move_vecs;
                                 }
@@ -225,13 +260,17 @@ impl Game {
                     }
                 }
             },
-            MoveRules::Radius { tiles, jump } => {
-
+            MoveRules::Radius { tiles } => {
+                
             },
             MoveRules::KnightJump { radius, offset } => {
                 
             },
         }
+    }
+
+    pub fn execute_move(&mut self, move_to_execute: &Move) {
+        
     }
 }
 

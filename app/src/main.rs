@@ -17,7 +17,7 @@ pub fn main() -> Result<(), String> {
         .map_err(|e| e.to_string())?;
 
     let mut canvas = window.into_canvas().build().map_err(|e| e.to_string())?;
-    let mut tex_creator = canvas.texture_creator();
+    let tex_creator = canvas.texture_creator();
     let mut event_pump = sdl_context.event_pump()?;
     let game = Game::two_piece_test(piece::defaults::pawn()).unwrap();
     let mut app = App::new(game)?;

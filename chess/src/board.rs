@@ -123,6 +123,21 @@ impl Board {
         abs
     }
 
+    pub fn absolute_coord_to_rel(&self, original: Coord, start_info: StartInfo) -> Coord {
+        todo!();
+        let mut x = original.x();
+        let mut y = original.y();
+
+        let rel = match start_info {
+            StartInfo::Bottom { .. } => original,
+            StartInfo::Left { .. } => Coord::new(y, self.height - 1 - x),
+            StartInfo::Right { .. } => Coord::new(self.width - 1 - y, x),
+            StartInfo::Top { .. } => Coord::new(self.width - 1 - x, self.height - 1 - y),
+        };
+
+        abs
+    }
+
     // for debugging stuff
     pub fn print_state(&self) {
         let mut board_str = String::new();

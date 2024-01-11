@@ -145,8 +145,6 @@ pub enum MoveRules {
     Radius {
         tiles: u32,
         // can jump? otherwise, blunt.
-        // pierce doesnt make much sense with this. I am not solving another rasterization problem
-        jump: bool,
     },
 
     // Try to reduce unnecessary allocations by making this a type.
@@ -185,7 +183,6 @@ impl MoveRules {
     pub fn radius(tiles: u32, can_jump: bool) -> MoveRules {
         MoveRules::Radius {
             tiles,
-            jump: can_jump,
         }
     }
 
@@ -197,10 +194,11 @@ impl MoveRules {
 #[derive(Clone)]
 pub struct NthMoveRules {
     move_rules: Vec<MoveRules>,
+    // first move is 0 btw
     nth_move: u32,
 
     // repeats every nth move. why tho?
-    repeating: bool,
+    // repeating: bool,
 }
 
 impl NthMoveRules {
@@ -208,7 +206,19 @@ impl NthMoveRules {
         Self {
             move_rules,
             nth_move,
-            repeating,
+            // repeating,
         }
+    }
+
+    pub fn move_rules(&self) -> &Vec<MoveRules> {
+        &self.move_rules
+    }
+
+    // pub fn repeating(&self) -> bool {
+    //     self.repeating
+    // }
+
+    pub fn nth_move(&self) -> u32 {
+        self.nth_move
     }
 }

@@ -7,12 +7,14 @@ use crate::error::{ChessError, Result};
 use crate::piece;
 use crate::piece::Piece;
 use crate::piece::PieceRef;
+use crate::team::Team;
 
 pub type Tile = Arc<RwLock<TileRef>>;
 
 #[derive(Clone)]
 pub struct TileRef {
     piece: Option<Piece>,
+    team_on_tile: Option<Arc<Team>>
 }
 
 impl TileRef {
@@ -38,12 +40,14 @@ impl TileRef {
                 ),
             });
         }
-        self.piece = Some(piece);
+        self.piece = Some(piece.clone());
+        self.team_on_tile = piece.read().unwrap().team();
         Ok(())
     }
 
     pub fn replace_piece(&mut self, piece: Piece) {
-        self.piece = Some(piece);
+        self.piece = Some(piece.clone());
+        self.team_on_tile = piece.read().unwrap().team();
     }
 
     pub fn remove_piece(&mut self) -> Result<()> {
@@ -53,6 +57,7 @@ impl TileRef {
             });
         }
         self.piece = None;
+        self.team_on_tile = None;
         Ok(())
     }
 
@@ -67,15 +72,23 @@ impl TileRef {
         lock.set_piece(self.piece.clone().unwrap())?;
         drop(lock);
 
-        self.piece = None;
+        self.remove_piece();
 
         Ok(())
+    }
+
+    pub fn team_on_tile(&self) -> Option<Arc<Team>> {
+        self.team_on_tile.clone()
+    }
+
+    pub fn team_on_tile_unchecked(&self) -> Arc<Team> {
+        self.team_on_tile.as_ref().unwrap().clone()
     }
 }
 
 #[derive(Default)]
 pub struct TileBuilder {
-    piece: Option<Piece>,
+    
 }
 
 impl TileBuilder {
@@ -83,13 +96,7 @@ impl TileBuilder {
         Self::default()
     }
 
-    pub fn piece(mut self, piece: Piece) -> Self {
-        self.piece = Some(piece);
-
-        self
-    }
-
     pub fn build(self) -> Tile {
-        Arc::new(RwLock::new(TileRef { piece: self.piece }))
+        Arc::new(RwLock::new(TileRef {piece: None, team_on_tile: None}))
     }
 }

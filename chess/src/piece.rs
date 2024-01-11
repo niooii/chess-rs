@@ -35,7 +35,9 @@ pub struct PieceRef {
     // imagine flipping the board 90 degrees, or 180, or whatever
     // and then the coordinate would be relative to THAT board.
     // relative_starting_coord: Coord
-    rel_pos: Option<Coord>
+    rel_pos: Option<Coord>,
+    // every time the piece is moved, this gets incremented
+    move_number: u32
 }
 
 impl PieceRef {
@@ -119,7 +121,17 @@ impl PieceRef {
         self.rel_pos.unwrap().set_x(self.rel_pos.unwrap().x() + x);
         self.rel_pos.unwrap().set_y(self.rel_pos.unwrap().y() + y);
     }
+
+    pub fn increment_move(&mut self) {
+        self.move_number += 1;
+    }
+
+    // current move number
+    pub fn move_num(&self) -> u32 {
+        self.move_number
+    }
 }
+
 
 #[derive(Default)]
 pub struct PieceBuilder {
@@ -211,7 +223,8 @@ impl PieceBuilder {
             pierce_immune: self.pierce_immune,
             use_kill_for_moves: self.use_kill_for_moves,
             use_moves_for_kills: self.use_moves_for_kills,
-            rel_pos: None
+            rel_pos: None,
+            move_number: 0
         })))
     }
 
@@ -248,7 +261,7 @@ pub mod defaults {
                 Distance::finite(2),
                 Direction::Up,
             )])],
-            1,
+            0,
             false,
         )];
 
