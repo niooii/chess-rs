@@ -8,3 +8,4 @@ pub mod piece_set;
 pub mod team;
 pub mod tile;
 pub mod vec2;
+pub mod move_calculation;

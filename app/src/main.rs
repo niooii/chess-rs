@@ -1,6 +1,6 @@
 use std::{sync::Arc, time::Duration, collections::HashMap};
 
-use chess::{self, board::Board, game::{Game, self}};
+use chess::{self, board::Board, game::{Game, self}, piece};
 use debug_app::App;
 use sdl2::{pixels::Color, event::Event, keyboard::Keycode, render::Texture, image::{InitFlag, LoadTexture}};
 
@@ -19,7 +19,7 @@ pub fn main() -> Result<(), String> {
     let mut canvas = window.into_canvas().build().map_err(|e| e.to_string())?;
     let mut tex_creator = canvas.texture_creator();
     let mut event_pump = sdl_context.event_pump()?;
-    let game = Game::original().unwrap();
+    let game = Game::two_piece_test(piece::defaults::pawn()).unwrap();
     let mut app = App::new(game)?;
 
     // should be stored in the following key format:
@@ -40,6 +40,7 @@ pub fn main() -> Result<(), String> {
                     let piece_rlock = p.read().unwrap();
                     
                     let path = format!("app/textures/{}/{}.png", piece_rlock.team_unchecked().name(), piece_rlock.name());
+                    println!("{path}");
                     let key = format!("{}:{}", piece_rlock.team_unchecked().name(), piece_rlock.name());
 
                     if texture_map.contains_key(&key) {
@@ -57,9 +58,9 @@ pub fn main() -> Result<(), String> {
 
     let running = true;
 
-    'mainapp: while running {
+    'mainapp: while app.running {
         app.handle_event(&mut event_pump);
-        app.render_game(&mut canvas, &texture_map)
+        app.render_game(&mut canvas, &texture_map);
     }
 
     Ok(())

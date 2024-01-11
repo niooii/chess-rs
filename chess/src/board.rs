@@ -39,39 +39,61 @@ impl Board {
         }
     }
 
+    // initiailizes the pieces on every call
     pub fn add_piece_set(&mut self, set: PieceSet) -> Result<()> {
+        let team = set.team().clone();
+        let rel_starting_coords = set.starting_coords();
+
+        for (i, piece) in set.pieces().iter().enumerate() {
+            let start = rel_starting_coords[i];
+            let start_info = team.start_info();
+            let abs_coord = self.rel_coord_to_absolute(start, start_info);
+            // add the translation vector (offset) from relative to absolute space.
+            let tile_opt = match start_info {
+                StartInfo::Bottom { offset } => self.tile_at(abs_coord.x() + offset, abs_coord.y()).unwrap(),
+                StartInfo::Top { offset } => self.tile_at(abs_coord.x() - offset, abs_coord.y()).unwrap(),
+                StartInfo::Left { offset } => self.tile_at(abs_coord.x(), abs_coord.y() - offset).unwrap(),
+                StartInfo::Right { offset } => self.tile_at(abs_coord.x(), abs_coord.y() + offset).unwrap(),
+            };
+            //
+
+            let mut tile_lock = tile_opt.write().unwrap();
+            tile_lock.set_piece(piece.clone())?;
+            drop(tile_lock);
+        }
+        
         self.piece_sets.push(set);
 
         Ok(())
     }
 
     /// should only be called once
-    pub fn init(&mut self) -> Result<()> {
-        for set in &self.piece_sets {
-            let team = set.team().clone();
-            let rel_starting_coords = set.starting_coords();
+    // pub fn init(&mut self) -> Result<()> {
+    //     for set in &self.piece_sets {
+    //         let team = set.team().clone();
+    //         let rel_starting_coords = set.starting_coords();
 
-            for (i, piece) in set.pieces().iter().enumerate() {
-                let start = rel_starting_coords[i];
-                let start_info = team.start_info();
-                let abs_coord = self.rel_coord_to_absolute(start, start_info);
-                // add the translation vector (offset) from relative to absolute space.
-                let tile_opt = match start_info {
-                    StartInfo::Bottom { offset } => self.tile_at(abs_coord.x() + offset, abs_coord.y()).unwrap(),
-                    StartInfo::Top { offset } => self.tile_at(abs_coord.x() - offset, abs_coord.y()).unwrap(),
-                    StartInfo::Left { offset } => self.tile_at(abs_coord.x(), abs_coord.y() - offset).unwrap(),
-                    StartInfo::Right { offset } => self.tile_at(abs_coord.x(), abs_coord.y() + offset).unwrap(),
-                };
-                //
+    //         for (i, piece) in set.pieces().iter().enumerate() {
+    //             let start = rel_starting_coords[i];
+    //             let start_info = team.start_info();
+    //             let abs_coord = self.rel_coord_to_absolute(start, start_info);
+    //             // add the translation vector (offset) from relative to absolute space.
+    //             let tile_opt = match start_info {
+    //                 StartInfo::Bottom { offset } => self.tile_at(abs_coord.x() + offset, abs_coord.y()).unwrap(),
+    //                 StartInfo::Top { offset } => self.tile_at(abs_coord.x() - offset, abs_coord.y()).unwrap(),
+    //                 StartInfo::Left { offset } => self.tile_at(abs_coord.x(), abs_coord.y() - offset).unwrap(),
+    //                 StartInfo::Right { offset } => self.tile_at(abs_coord.x(), abs_coord.y() + offset).unwrap(),
+    //             };
+    //             //
 
-                let mut tile_lock = tile_opt.write().unwrap();
-                tile_lock.set_piece(piece.clone())?;
-                drop(tile_lock);
-            }
-        }
+    //             let mut tile_lock = tile_opt.write().unwrap();
+    //             tile_lock.set_piece(piece.clone())?;
+    //             drop(tile_lock);
+    //         }
+    //     }
 
-        Ok(())
-    }
+    //     Ok(())
+    // }
 
     /// TODO: implement error checking later (out of bounds)
     /// FOLLOWS INDEXING RULES. starts at 0 (where 0 on the y axis is the BOTTOM tile, max height is the TOP one.).

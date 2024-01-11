@@ -12,17 +12,18 @@ use std::time::Duration;
 
 pub struct App {
     pub game: Game,
+    pub running: bool
 }
 
 impl App {
     pub fn new(game: Game) -> Result<Self, String> {
         Ok(App {
             game,
+            running: true
         })
     }
 
     pub fn handle_event(&mut self, event_pump: &mut EventPump) {
-        let mut running = true;
 
         for event in event_pump.poll_iter() {
             match event {
@@ -30,7 +31,7 @@ impl App {
                 | Event::KeyDown {
                     keycode: Some(Keycode::Escape),
                     ..
-                } => running = false,
+                } => self.running = false,
                 _ => {}
             }
         }
@@ -65,9 +66,9 @@ impl App {
                         secondary_color
                     }
                 );
-                let tile_rect = Rect::new((x * TILE_WIDTH) as i32, (y * TILE_HEIGHT) as i32, TILE_WIDTH, TILE_HEIGHT);
+                let tile_rect = Rect::new((x * TILE_WIDTH) as i32, ((board.height() - 1 - y) * TILE_HEIGHT) as i32, TILE_WIDTH, TILE_HEIGHT);
                 canvas.fill_rect(tile_rect).unwrap();
-                let tile = board.tile_at(x, board.height() - 1 - y).unwrap();
+                let tile = board.tile_at(x, y).unwrap();
                 let tile_rlock = tile.read().unwrap();
                 let piece = tile_rlock.piece();
 
@@ -79,6 +80,15 @@ impl App {
                     canvas.copy(&texture_map[&key], None, tile_rect).unwrap();
                 }
             }
+        }
+
+        for game_move in self.game.calculate_moves_for("White".to_string()).unwrap() {
+            let to = game_move.to();
+
+            let tile_rect = Rect::new((to.x() * TILE_WIDTH) as i32, ((board.height() - 1 - to.y()) * TILE_HEIGHT) as i32, TILE_WIDTH, TILE_HEIGHT);
+
+            canvas.set_draw_color(Color::RED);
+            canvas.fill_rect(tile_rect).unwrap();
         }
 
         canvas.present();
