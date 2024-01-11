@@ -56,10 +56,13 @@ impl PieceSet {
     pub fn clone_for_team(&self, team: Arc<Team>) -> Self {
 
         Self {
-            team,
+            team: team.clone(),
             pieces: {
                 self.pieces.iter().map(|p| {
-                    PieceBuilder::clone_piece(p)
+                    let new_p = PieceBuilder::clone_piece(p);
+                    new_p.write().unwrap()
+                    .set_team(team.clone());
+                new_p
                 }).collect()
             },
             starting_coords: self.starting_coords.clone()

@@ -23,8 +23,8 @@ impl Game {
     }
 
     pub fn original() -> Result<Self> {
-        let mut board = Board::new(8, 8);
-        let white_team = Team::new("White".to_string(), StartInfo::Bottom { offset: 0 });
+        let mut board = Board::new(12, 12);
+        let white_team = Team::new("White".to_string(), StartInfo::Bottom { offset: 1 });
         let black_team = Team::new("Black".to_string(), StartInfo::Top { offset: 0 });
 
         let white = Arc::new(white_team);
