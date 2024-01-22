@@ -65,14 +65,17 @@ impl Game {
 
         let white = Arc::new(Team::new("White".to_string(), StartInfo::Bottom { offset: 0 }));
         let black = Arc::new(Team::new("Black".to_string(), StartInfo::Top { offset: 0 }));
+        let green = Arc::new(Team::new("Green".to_string(), StartInfo::Left { offset: 0 }));
 
         let mut white_set = PieceSet::new(white.clone(), Vec::new());
         white_set.add_piece(piece, Coord::new(2, 3))?;
 
         let black_set = white_set.clone_for_team(black);
+        let green_set = white_set.clone_for_team(green);
 
         board.add_piece_set(white_set)?;
         board.add_piece_set(black_set)?;
+        board.add_piece_set(green_set)?;
 
         Ok(
             Self {

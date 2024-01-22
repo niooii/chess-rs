@@ -135,7 +135,7 @@ impl Board {
             StartInfo::Top { .. } => Coord::new(self.width - 1 - x, self.height - 1 - y),
         };
 
-        abs
+        
     }
 
     // for debugging stuff
